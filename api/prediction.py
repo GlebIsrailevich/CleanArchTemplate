@@ -2,6 +2,7 @@ from typing import List
 
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.entities.auth_schema import Payload
 from core.entities.prediction_schema import (
@@ -25,6 +26,8 @@ router = APIRouter(
     prefix="/prediction",
     tags=["prediction"],
 )
+
+security = HTTPBearer()
 
 
 @router.get("/", response_model=List[PredictorInfo])
@@ -63,6 +66,7 @@ async def get_prediction_history(
 @inject
 async def make_predictions(
     prediction_request: PredictionRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     current_user_payload: Payload = Depends(get_current_user_payload),
     prediction_service: PredictionService = Depends(
         Provide[Container.prediction_service]
@@ -84,24 +88,27 @@ async def make_predictions(
         # print(prediction_request.features)
         batch_requests = [
             {
-                "N_Days": single_request.N_Days,
-                "Drug": single_request.Drug,
-                "Age": single_request.Age,
-                "Sex": single_request.Sex,
-                "Ascites": single_request.Ascites,
-                "Hepatomegaly": single_request.Hepatomegaly,
-                "Spiders": single_request.Spiders,
-                "Edema": single_request.Edema,
-                "Bilirubin": single_request.Bilirubin,
-                "Cholesterol": single_request.Cholesterol,
-                "Albumin": single_request.Albumin,
-                "Copper": single_request.Copper,
-                "Alk_Phos": single_request.Alk_Phos,
-                "SGOT": single_request.SGOT,
-                "Tryglicerides": single_request.Tryglicerides,
-                "Platelets": single_request.Platelets,
-                "Prothrombin": single_request.Prothrombin,
-                "Stage": single_request.Stage,
+                "app_id": single_request.app_id,
+                "amnt": single_request.amnt,
+                "currency": single_request.currency,
+                "operation_kind": single_request.operation_kind,
+                "card_type": single_request.card_type,
+                "operation_type": single_request.operation_type,
+                "operation_type_group": single_request.operation_type_group,
+                "ecommerce_flag": single_request.ecommerce_flag,
+                "payment_system": single_request.payment_system,
+                "income_flag": single_request.income_flag,
+                "mcc": single_request.mcc,
+                "country": single_request.country,
+                "city": single_request.city,
+                "mcc_category": single_request.mcc_category,
+                "day_of_week": single_request.day_of_week,
+                "hour": single_request.hour,
+                "days_before": single_request.days_before,
+                "weekofyear": single_request.weekofyear,
+                "hour_diff": single_request.hour_diff,
+                "transaction_number": single_request.transaction_number,
+                "product": single_request.product,
             }
             for single_request in prediction_request.features
         ]

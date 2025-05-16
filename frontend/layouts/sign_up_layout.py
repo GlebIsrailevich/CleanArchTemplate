@@ -72,3 +72,19 @@ def sign_up_layout():
         ],
         style={"maxWidth": "500px", "margin": "0 auto", "padding": "20px"},
     )
+
+
+# from frontend.callbacks.callbacks import register_user
+# def handle_sign_up(n_clicks, email, password, name):
+#     try:
+#         response, error = register_user(email, password, name)
+#         if error:
+#             return error_message(error), ""
+
+#         if "error" in response:
+#             return error_message(response["detail"]), ""
+
+#         return redirect('/'), None
+
+#     except Exception as e:
+#         return error_message(str(e)), ""

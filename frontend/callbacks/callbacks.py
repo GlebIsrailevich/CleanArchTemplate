@@ -5,7 +5,7 @@ from datetime import datetime
 from json import JSONDecodeError, loads
 
 import pandas as pd
-from dash import ALL, Input, Output, State, callback_context, dcc
+from dash import ALL, Input, Output, State, callback_context, dcc, html
 from dash.exceptions import PreventUpdate
 
 from frontend.data.local_data import authentificated_session
@@ -117,9 +117,15 @@ def register_callbacks(_app):
                 > 1
             ):
                 sign_page_last_click_timestamp = datetime.now()
+                # if button_index == "sign-up":
+                #     return "/sign-up"
+                # elif button_index == "sign-in":
+                #     return "/sign-in"
                 if button_index == "sign-up":
                     return "/sign-up"
                 elif button_index == "sign-in":
+                    return "/sign-in"
+                elif button_index == "sign-out":
                     return "/sign-in"
             else:
                 raise PreventUpdate
@@ -217,6 +223,84 @@ def register_callbacks(_app):
 
         raise PreventUpdate
 
+    # @_app.callback(
+    #     Output("prediction-results", "children"),
+    #     Input("upload-data", "contents"),
+    #     State("model-dropdown", "value"),
+    #     State("user-session", "data"),
+    # )
+    # def handle_file_upload(contents, selected_model, user_session):
+    #     if not user_session or not user_session.get("access_token"):
+    #         return error_message("Authentication required")  # Explicit check
+
+    @_app.callback(
+        Output("prediction-results", "children"),
+        Input("upload-data", "contents"),
+        [
+            State("model-dropdown", "value"),
+            State("user-session", "data"),
+        ],
+        prevent_initial_call=True,
+    )
+    def handle_file_upload(contents, selected_model, user_session):
+        if not contents:
+            raise PreventUpdate
+
+        if not user_session or not user_session.get("access_token"):
+            return error_message("Authentication required. Please sign in again.")
+
+        if not selected_model:
+            return error_message("Please select a model for prediction.")
+
+        try:
+            # Parse the uploaded CSV file
+            json_features = parse_contents(contents)
+
+            # Send the prediction request to the backend
+            prediction_results = send_prediction_request(
+                selected_model, json_features, user_session=user_session
+            )
+
+            if prediction_results:
+                # Return results in a formatted table
+                return html.Div(
+                    [
+                        html.H4("Prediction Results"),
+                        html.Div(
+                            f"Total cost: {prediction_results.get('cost', 'N/A')}"
+                        ),
+                        html.Table(
+                            # Header
+                            [html.Tr([html.Th("Features"), html.Th("Prediction")])]
+                            +
+                            # Rows for each prediction
+                            [
+                                html.Tr(
+                                    [
+                                        html.Td(str(pred.get("features", {}))),
+                                        html.Td(
+                                            str(
+                                                pred.get("target", {}).get(
+                                                    "answer", "N/A"
+                                                )
+                                            )
+                                        ),
+                                    ]
+                                )
+                                for pred in prediction_results.get("predictions", [])
+                            ],
+                            className="prediction-results-table",
+                        ),
+                    ]
+                )
+            else:
+                return error_message(
+                    "Failed to get prediction results. Please check your authentication and try again."
+                )
+
+        except Exception as e:
+            return error_message(f"Error processing file: {str(e)}")
+
     @_app.callback(
         [
             Output("users-report-div", "children"),
@@ -276,6 +360,17 @@ def register_callbacks(_app):
 
         raise PreventUpdate
 
+    @_app.callback(
+        Output("url", "href"),  # Target the Location component's href
+        Input("login-button", "n_clicks"),
+        [State("email-input", "value"), State("password-input", "value")],
+        prevent_initial_call=True,
+    )
+    def handle_login(n_clicks, email, password):
+        if authenticate_user(email, password):
+            return "/dashboard"  # Redirect to dashboard
+        return "/login-error"  # Redirect to error page
+
     # @_app.callback(
     #     [
     #         Output("model-dropdown", "options"),
@@ -290,36 +385,61 @@ def register_callbacks(_app):
     #         {"label": model["name"], "value": model["name"]} for model in models
     #     ]
     #     return dropdown_options, dropdown_options[0]["value"]
+    # @_app.callback(
+    #     [
+    #         Output("model-dropdown", "options"),
+    #         Output("model-dropdown", "value"),
+    #     ],
+    #     Input("model-dropdown", "options"),
+    #     State("user-session", "data"),
+    # )
+    # def manage_models(_, user_session):
+    #     try:
+    #         models = fetch_models(user_session)
+    #         dropdown_options = [
+    #             {"label": model["name"], "value": model["name"]} for model in models
+    #         ]
+
+    #         # Add defensive check to avoid IndexError
+    #         if dropdown_options:
+    #             default_value = dropdown_options[0]["value"]
+    #         else:
+    #             # Provide a fallback option when no models are available
+    #             dropdown_options = [{"label": "No models available", "value": ""}]
+    #             default_value = ""
+
+    #         return dropdown_options, default_value
+    #     except Exception as e:
+    #         # Log the error for debugging
+    #         print(f"Error in manage_models callback: {str(e)}")
+    #         # Return a fallback option
+    #         fallback_options = [{"label": "Error loading models", "value": ""}]
+    #         return fallback_options, ""
     @_app.callback(
-        [
-            Output("model-dropdown", "options"),
-            Output("model-dropdown", "value"),
-        ],
-        Input("model-dropdown", "options"),
-        State("user-session", "data"),
+        [Output("model-dropdown", "options"), Output("model-dropdown", "value")],
+        [Input("url", "pathname")],  # Trigger on page load
+        [State("user-session", "data")],
     )
-    def manage_models(_, user_session):
+    def load_models(_, user_session):
         try:
+            if not user_session:
+                return [{"label": "Login required", "value": ""}], ""
+
             models = fetch_models(user_session)
-            dropdown_options = [
-                {"label": model["name"], "value": model["name"]} for model in models
+
+            if not models:
+                return [{"label": "No models available", "value": ""}], ""
+
+            options = [
+                {"label": f"{m['name']} ({m['cost']} credits)", "value": m["name"]}
+                for m in models
             ]
 
-            # Add defensive check to avoid IndexError
-            if dropdown_options:
-                default_value = dropdown_options[0]["value"]
-            else:
-                # Provide a fallback option when no models are available
-                dropdown_options = [{"label": "No models available", "value": ""}]
-                default_value = ""
+            return options, models[0]["name"]
 
-            return dropdown_options, default_value
         except Exception as e:
-            # Log the error for debugging
-            print(f"Error in manage_models callback: {str(e)}")
-            # Return a fallback option
-            fallback_options = [{"label": "Error loading models", "value": ""}]
-            return fallback_options, ""
+            print(f"Model loading error: {str(e)}")
+            return [{"label": "Error loading models", "value": ""}], ""
 
     @_app.callback(
         [
@@ -366,6 +486,40 @@ def register_callbacks(_app):
                     break
             return estimated_cost(total_cost)
         return estimated_cost(None)
+
+    # Add to the register_callbacks function
+    # @_app.callback(
+    #     Output("user-session", "data"),
+    #     Input({"type": "nav-button", "index": "sign-out"}, "n_clicks"),
+    #     prevent_initial_call=True,
+    # )
+    # def sign_out_callback(_):
+    #     return {}  # Clear session
+
+    # @_app.callback(
+    #     [
+    #         Output("user-session", "data"),  # Clear the session
+    #         Output("url", "pathname"),  # Redirect to sign-in
+    #     ],
+    #     [
+    #         Input({"type": "nav-button", "index": "sign-out"}, "n_clicks"),
+    #     ],
+    #     [
+    #         State("user-session", "data"),
+    #     ],
+    #     prevent_initial_call=True,
+    # )
+    # def sign_out_callback(sign_out_clicks, user_session):
+    #     if sign_out_clicks > 0:
+    #         # Clear the user session
+    #         cleared_session = {
+    #             "is_authenticated": False,
+    #             "access_token": None,
+    #             "is_superuser": False,
+    #         }
+    #         # Redirect to sign-in page
+    #         return cleared_session, "/sign-in"
+    #     raise PreventUpdate
 
 
 # import base64

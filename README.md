@@ -3,21 +3,99 @@
 
 ```
 │
+├── api/                  # Ядро приложения (бизнес-логика)
+│   ├── admin.py         # Сущности (бизнес-объекты)
+│   ├── auth.py         # Сценарии использования (бизнес-правила)
+│   ├── billing.py         # Сценарии использования (бизнес-правила)
+│   ├── prediction.py         # Сценарии использования (бизнес-правила)
+│   └── routes.py         # Сценарии использования (бизнес-правила)
+│   
 ├── core/                  # Ядро приложения (бизнес-логика)
 │   ├── entities/          # Сущности (бизнес-объекты)
-│   │   └── user.py        # Пример: класс User
+|   │   ├── auth_schema.py         
+|   │   ├── base_model.py         
+|   │   ├── billing_schema.py         
+|   │   ├── prediction_batch.py         
+|   │   ├── prediction_schema.py         
+|   │   ├── prediction.py         
+|   │   ├── predictor.py         
+|   │   ├── transaction.py         
+|   │   ├── user_schema.py         
+│   │   └── user.py        # класс User
 │   ├── use_cases/         # Сценарии использования (бизнес-правила)
 │   │   └── user_use_cases.py  # Пример: регистрация пользователя
 │   └── repositories/     # Интерфейсы репозиториев (абстракции для работы с данными)
+│       ├── base_repository.py         
+│       ├── billing_repository.py         
+│       ├── prediction_repository.py         
 │       └── user_repository.py  # Пример: интерфейс UserRepository
 │
-├── infrastructure/       # Внешние зависимости и реализация
+├── frontend/       # Внешние зависимости и реализация
+│   ├── callbacks/               # Работа с базой данных
+│   │   └── callbacks.py  # Реализация UserRepository
+│   └── data/
+|   |   ├──remote_data.py       # Веб-слой (API, HTTP-запросы)
+│   |   └── local_data.py  # Контроллеры (обработчики запросов)
+│   |
+│   └── layouts/
+|   |   ├──admin_layout.py       
+|   |   ├──billing_layout.py       
+|   |   ├──prediction_laout.py       
+|   |   ├──sign_in_layout.py       
+│   |   └── sign_up_layout.py  
+│   |
+│   └── ui_kit/
+│       ├── components/
+|       |   ├──__init__.py       
+│       |   ├── error_message.py  
+|       |   ├──navigation.py       
+|       |   └──user_balance.py       
+│       └── app.py  
+|       ├──styles.py       
+│       └── utils.py  
+|
+├── infra/       # Внешние зависимости и реализация
 │   ├── db/               # Работа с базой данных
 │   │   └── user_repository_impl.py  # Реализация UserRepository
-│   └── web/              # Веб-слой (API, HTTP-запросы)
-│       └── controllers/  # Контроллеры (обработчики запросов)
-│           └── user_controller.py  # Пример: обработчик запросов для пользователей
+│   ├──exceptions/               # Работа с базой данных
+│   │   └── exceptions.py  # Реализация UserRepository
+│   └── security/              
+│   |   └── security_entity.py  
+│   |
+│   └── web/              
+│   |   └── controllers/  # Контроллеры (обработчики запросов)
+│   |       └── user_controller.py  # Пример: обработчик запросов для пользователей
+│   ├── celery_worker.py               
+│   ├── container.py               
+│   ├── database.py               
+│   ├── dependencies.py               
+│   └── logger.py       # Настройки (например, подключение к БД)
 │
+├── ml/               # Конфигурация приложения
+│   ├── ml_models/              # Работа с базой данных
+|   │   ├── catboost.dill              # Работа с базой данных
+|   │   ├── logreg.dill              # Работа с базой данных
+|   │   ├── svm.dill              # Работа с базой данных
+|   │   └── preprocessing_pipeline.dill       # Настройки (например, подключение к БД)
+│   └── notebooks/       # Настройки (например, подключение к БД)
+|      └── transactions.ipynb       # Настройки (например, подключение к БД)
+|
+├── service/                  # Ядро приложения (бизнес-логика)
+│   ├── authentification.py         # Сущности (бизнес-объекты)
+│   ├── base_service.py         # Сценарии использования (бизнес-правила)
+│   ├── billing_service.py         # Сценарии использования (бизнес-правила)
+│   ├── prediction_service.py         # Сценарии использования (бизнес-правила)
+│   ├── predictor_service.py         # Сценарии использования (бизнес-правила)
+│   ├── user_service.py         # Сценарии использования (бизнес-правила)
+│   └── settings.py       # Настройки (например, подключение к БД)
+|
+├── utils/                  # Ядро приложения (бизнес-логика)
+│   ├── class_object.py         # Сущности (бизнес-объекты)
+│   ├── date.py         # Сценарии использования (бизнес-правила)
+│   ├── hash.py         # Сценарии использования (бизнес-правила)
+│   ├── query_builder.py         # Сценарии использования (бизнес-правила)
+│   └── schema.py         # Сценарии использования (бизнес-правила)
+|
 ├── config/               # Конфигурация приложения
 │   └── settings.py       # Настройки (например, подключение к БД)
 │

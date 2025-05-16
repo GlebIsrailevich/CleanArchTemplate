@@ -75,8 +75,8 @@ class Container(containers.DeclarativeContainer):
             "api.billing",
             "api.prediction",
             "infra.dependencies",
-            "infra.web.controllers.user_controller",  # Add this
-            # "infra.web.dependencies",  # Add this
+            "infra.web.controllers.user_controller",
+            # "infra.web.dependencies",
         ]
     )
 
