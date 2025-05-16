@@ -1,12 +1,12 @@
 # Default
 
-from abc import ABC, abstractmethod
+# from abc import ABC, abstractmethod
 
 
-class UserRepository(ABC):
-    @abstractmethod
-    def save(self, user):
-        pass
+# class UserRepository(ABC):
+#     @abstractmethod
+#     def save(self, user):
+#         pass
 
 
 # DONE
@@ -27,6 +27,13 @@ from utils.date import get_now
 class UserRepository(BaseRepository):
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]):
         super().__init__(session_factory, User)
+
+    def create(self, user: User) -> User:
+        with self.session_factory() as session:
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            return user
 
     def get_users_report(self):
         with self.session_factory() as session:

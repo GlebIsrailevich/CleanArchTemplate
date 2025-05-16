@@ -11,6 +11,7 @@
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
 from fastapi import FastAPI
 
+from api.routes import routers
 from infra.container import Container
 from infra.web.controllers.user_controller import router as user_router
 
@@ -24,6 +25,7 @@ container.db().create_database()
 app = FastAPI()
 
 # Include the user router
+app.include_router(routers)
 app.include_router(user_router)
 
 if __name__ == "__main__":

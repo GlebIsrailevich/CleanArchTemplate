@@ -1,10 +1,11 @@
-from admin import router as admin_router
-from auth import router as auth_router
-from billing import router as billing_router
 from fastapi import APIRouter
-from prediction import router as predicting_router
 
-routers = APIRouter()
+from api.admin import router as admin_router
+from api.auth import router as auth_router
+from api.billing import router as billing_router
+from api.prediction import router as predicting_router
+
+routers = APIRouter(prefix="/api")
 
 
 @routers.get(
